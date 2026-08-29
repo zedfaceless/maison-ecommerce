@@ -204,3 +204,41 @@ ecommerce/
 - **Auth**: Supabase Auth with role-based access
 - **State**: Zustand (client-side state)
 - **Fonts**: Playfair Display + DM Sans
+
+---
+
+## Product Imagery
+
+All 30 catalogue images are served from Supabase Storage
+(`product-images/catalogue/`), not hotlinked from a third party.
+
+They used to be hotlinked from Unsplash, and three had already rotted to 404
+(Polo Shirt, Trench Coat, Cashmere Cardigan) — the storefront rendered blank
+frames for them. Re-hosting removes that whole class of failure: the images
+now live in the same project as the data that references them.
+
+Replacements for the three broken images were sourced from openly-licensed
+collections:
+
+| Product | Licence | Source |
+|---------|---------|--------|
+| Trench Coat | CC0 | [WordPress Photo Directory](https://wordpress.org/photos/) |
+| Denim Overshirt | CC0 | Smithsonian, via [rawpixel](https://www.rawpixel.com/) |
+| Cashmere Cardigan | **CC BY 4.0** — © Rovdyr | [Wikimedia Commons](https://commons.wikimedia.org/w/index.php?curid=3445286) |
+
+The Cashmere Cardigan photograph is licensed **CC BY 4.0** and requires
+attribution: *"Cardigan, sweater" by Rovdyr, licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).* The other two are
+CC0 and need no attribution; they are credited above as a courtesy.
+
+### Why "Denim Overshirt" and not "Polo Shirt"
+
+The seeded Polo Shirt image 404'd, and every openly-licensed polo photograph
+that could be found carried either third-party trademarks (a Wikipedia logo, a
+FUMAREL crest, an NRL team badge, Creative Commons Indonesia merchandise) or an
+identifiable person's face. Shipping any of those as demo product photography
+would put someone else's mark on the storefront.
+
+Rather than retire the product and leave the catalogue at 14 men's items
+against 15 women's, it was re-cast as a Denim Overshirt — the garment the
+replacement photograph actually shows — which keeps the split at 15/15.
