@@ -1,8 +1,33 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder";
+// These MUST come from the environment. The previous fallback to
+// "https://placeholder.supabase.co" meant a misconfigured deploy still
+// built and rendered — the storefront just came up permanently empty,
+// with the only symptom a DNS error in the browser console. Failing at
+// module load turns that silent runtime failure into a loud build-time
+// one, which is where it belongs.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+if (!supabaseUrl || !supabaseAnonKey) {
+  const missing = [
+    !supabaseUrl && "NEXT_PUBLIC_SUPABASE_URL",
+    !supabaseAnonKey && "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  throw new Error(
+    `Supabase is not configured: missing ${missing}. ` +
+      `Copy .env.example to .env.local and fill it in for local development, ` +
+      `or set the variables in the Vercel project settings for a deploy. ` +
+      `See README.md > Quick Start.`
+  );
+}
+
+// NEXT_PUBLIC_* values are embedded in the client bundle by design.
+// Only ever put the anon key here — never the service_role key, which
+// bypasses row-level security.
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type Profile = {

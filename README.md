@@ -49,7 +49,30 @@ In your Supabase dashboard:
 3. Go to **Authentication** → **URL Configuration**
 4. Set **Site URL** to: `http://localhost:3000`
 
-### 3. Install & Run
+### 3. Configure Environment
+
+```bash
+cp .env.example .env.local
+```
+
+Fill in both values from **Project Settings → API** in your Supabase dashboard:
+
+| Variable | Where to find it |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Project Settings → API → Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Project Settings → API → Project API keys → `anon` `public` |
+
+Use the **anon / public** key only. The `service_role` key bypasses row-level
+security, and anything prefixed `NEXT_PUBLIC_` is compiled into the browser
+bundle where any visitor can read it.
+
+`.env.local` is gitignored. Never commit real keys.
+
+For a Vercel deploy, set the same two variables under
+**Project → Settings → Environment Variables** and redeploy. They are read at
+build time, so a change only takes effect after a rebuild.
+
+### 4. Install & Run
 
 ```bash
 # Install dependencies
@@ -61,7 +84,20 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
-### 4. Test It Out
+### 5. Seed the Demo Data
+
+`sql/schema.sql` seeds 30 products, but leaves them with no owner and no
+images — so every seller view comes up empty and the storefront shows blank
+image frames. `sql/seed-demo.sql` fixes both.
+
+1. Sign up in the running app with **role = Seller**
+2. Open `sql/seed-demo.sql` and set `demo_seller_email` to that account's email
+3. Run it in the Supabase **SQL Editor**
+
+It assigns the unowned products to that seller and gives each one an image.
+It is idempotent, so re-running is safe.
+
+### 6. Test It Out
 
 1. **Create a Seller account**: Sign up with role = Seller
 2. **Create a Customer account**: Sign up with role = Customer (use a different email)
@@ -73,12 +109,16 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## Environment Variables
 
-Already configured in `.env.local`:
+Both are required. The app throws at startup if either is missing, rather than
+building successfully and rendering a permanently empty storefront.
 
-```
-NEXT_PUBLIC_SUPABASE_URL=https://oucdejjqsoqprcwablzd.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
-```
+| Variable | Required | Notes |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | yes | `https://<project-ref>.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | anon / public key — **never** `service_role` |
+
+See `.env.example`. Set them in `.env.local` locally, and in the Vercel project
+settings for a deploy — never in the repository.
 
 ---
 
