@@ -1,0 +1,78 @@
+# Supabase free-tier projects pause after ~7 days with no database activity.
+# This project already went down that way once: the pause looked like a dead
+# host from outside (DNS stopped resolving), which reads as a deleted project
+# rather than a sleeping one.
+#
+# This job issues one cheap authenticated read every 3 days, which counts as
+# activity and keeps the project awake. It queries a real table on purpose --
+# hitting /rest/v1/ alone does not necessarily touch Postgres.
+#
+# The anon key is safe to expose (it is compiled into the browser bundle and
+# is governed by row-level security), but it is still read from a repo secret
+# so the key can be rotated in one place and never lives in git history.
+#
+# Setup, once:
+#   gh secret set SUPABASE_URL      --repo zedfaceless/maison-ecommerce
+#   gh secret set SUPABASE_ANON_KEY --repo zedfaceless/maison-ecommerce
+#
+# Note: GitHub silently disables scheduled workflows in a repository with no
+# commits for 60 days. If this repo goes quiet, re-enable the schedule from
+# the Actions tab, or push any commit.
+
+name: Supabase keep-alive
+
+on:
+  schedule:
+    # 07:17 UTC, every 3rd day of the month. An off-peak, non-round minute:
+    # GitHub delays jobs scheduled on the hour when the runner queue is busy.
+    - cron: "17 7 */3 * *"
+  workflow_dispatch:
+
+# No repository contents are read or written; drop the default token's scope.
+permissions: {}
+
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    name: Ping Supabase REST
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Query products table
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_ANON_KEY}" ]; then
+            echo "::error::SUPABASE_URL or SUPABASE_ANON_KEY is not set. See the header of this workflow file."
+            exit 1
+          fi
+
+          # --fail-with-body so a 4xx/5xx is a failure but the PostgREST error
+          # body still reaches the log. Retry to absorb a cold start: a project
+          # that is already paused can take a few seconds to answer.
+          status=$(curl --silent --show-error --fail-with-body \
+            --retry 3 --retry-delay 10 --retry-all-errors \
+            --max-time 30 \
+            --write-out '%{http_code}' \
+            --output /tmp/keepalive-body.txt \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            "${SUPABASE_URL}/rest/v1/products?select=id&limit=1")
+
+          echo "HTTP ${status}"
+          echo "Body: $(cat /tmp/keepalive-body.txt)"
+
+          # A reachable-but-empty result still counts as activity; an empty
+          # array is a healthy answer. Only a non-200 is a real failure.
+          if [ "${status}" != "200" ]; then
+            echo "::error::Supabase keep-alive ping returned HTTP ${status}"
+            exit 1
+          fi
+
+          echo "Supabase project is awake."
