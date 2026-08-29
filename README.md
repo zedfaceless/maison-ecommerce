@@ -40,6 +40,13 @@ A full-featured ecommerce platform built with **Next.js 14**, **TypeScript**, **
 2. Open **SQL Editor** → Click **New Query**
 3. Copy and paste the entire contents of `sql/schema.sql`
 4. Click **Run** — this creates all tables, seeds 30 products, sets up RLS policies, and configures auth triggers
+5. **Required:** run `sql/fix-order-rls.sql` the same way.
+   As shipped, `schema.sql` gives `orders` and `order_items` four mutually
+   recursive RLS policies, so every checkout fails with
+   `42P17 infinite recursion detected in policy for relation "orders"`
+   and no order is ever written. `fix-order-rls.sql` routes those
+   cross-table lookups through `SECURITY DEFINER` helpers, which cuts the
+   loop. It is idempotent.
 
 ### 2. Configure Supabase Auth
 
@@ -96,6 +103,12 @@ image frames. `sql/seed-demo.sql` fixes both.
 
 It assigns the unowned products to that seller and gives each one an image.
 It is idempotent, so re-running is safe.
+
+> **On a project that already has images, use `sql/backfill-sellers.sql`
+> instead.** `seed-demo.sql` is written for a *fresh* instance and
+> rewrites all 30 `image_url` values as a matter of course, which would
+> overwrite artwork an existing project already has.
+> `backfill-sellers.sql` sets `seller_id` and touches nothing else.
 
 ### 6. Test It Out
 
@@ -157,7 +170,10 @@ ecommerce/
 │   ├── supabase.ts                 # Supabase client + TypeScript types
 │   └── store.ts                    # Zustand state management (auth + cart)
 ├── sql/
-│   └── schema.sql                  # Complete database schema (RUN THIS FIRST!)
+│   ├── schema.sql                  # Complete database schema (RUN THIS FIRST!)
+│   ├── fix-order-rls.sql           # Required: breaks the orders/order_items policy recursion
+│   ├── backfill-sellers.sql        # Gives the seeded products an owner (images untouched)
+│   └── seed-demo.sql               # Fresh instances only: owner + images
 ├── .env.local                      # Environment variables
 ├── tailwind.config.ts
 ├── tsconfig.json
