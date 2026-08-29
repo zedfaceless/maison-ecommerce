@@ -214,7 +214,10 @@ All 30 catalogue images are served from Supabase Storage
 
 They used to be hotlinked from Unsplash, and three had already rotted to 404
 (Polo Shirt, Trench Coat, Cashmere Cardigan) — the storefront rendered blank
-frames for them. Re-hosting removes that whole class of failure: the images
+frames for them. Two more returned HTTP 200 while serving the wrong subject
+entirely: "Cashmere V-Neck Sweater" was a pink 3D cartoon monster and
+"Leather Belt" was a navy backpack. A status-code check cannot catch that
+class of error; both were found by looking at the rendered catalogue. Re-hosting removes that whole class of failure: the images
 now live in the same project as the data that references them.
 
 Replacements for the three broken images were sourced from openly-licensed
@@ -225,6 +228,8 @@ collections:
 | Trench Coat | CC0 | [WordPress Photo Directory](https://wordpress.org/photos/) |
 | Denim Overshirt | CC0 | Smithsonian, via [rawpixel](https://www.rawpixel.com/) |
 | Cashmere Cardigan | **CC BY 4.0** — © Rovdyr | [Wikimedia Commons](https://commons.wikimedia.org/w/index.php?curid=3445286) |
+| Cashmere V-Neck Sweater | CC0 | [StockSnap](https://stocksnap.io/) |
+| Leather Belt | CC0 | [StockSnap](https://stocksnap.io/) |
 
 The Cashmere Cardigan photograph is licensed **CC BY 4.0** and requires
 attribution: *"Cardigan, sweater" by Rovdyr, licensed under
